@@ -5,17 +5,16 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ Enable CORS for frontend
+  // Enable CORS for both dev and deployed frontend
   app.enableCors({
     origin: [
-      'http://localhost:3000',          // Local development
-      'https://inno-vites-assesment-frontend.vercel.app',   // Production frontend domain
+      'http://localhost:3000',              // dev
+      'https://inno-vites-assesment-frontend-iko4qjn9m.vercel.app/', // deployed frontend
     ],
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     credentials: true,
   });
 
-  // ✅ Global validation pipes
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -24,11 +23,8 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ Use dynamic port for Render
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-
-  console.log(`🚀 Backend running on port ${port}`);
+  await app.listen(process.env.PORT || 3001);
+  console.log(`🚀 Backend running on port ${process.env.PORT || 3001}`);
 }
-
 bootstrap();
+
