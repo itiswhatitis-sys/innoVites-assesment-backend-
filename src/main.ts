@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',          // Local development
-      'https://inno-vites-assesment-frontend.vercel.app/',   // Production frontend domain
+      'https://inno-vites-assesment-frontend.vercel.app',   // Production frontend domain
     ],
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     credentials: true,
