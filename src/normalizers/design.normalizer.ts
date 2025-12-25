@@ -17,17 +17,20 @@ export class DesignNormalizer {
     payload: DesignInput;
   }> {
     // 1️⃣ DB-based input
-    if (dto.designId) {
-      const design = await this.repo.findById(dto.designId);
-      if (!design) {
-        throw new NotFoundException('Design ID not found');
-      }
+   if (dto.designId) {
+  const design = await this.repo.findById(dto.designId);
+  if (!design) {
+    throw new NotFoundException('Design ID not found');
+  }
 
-      return {
-        source: 'DB',
-        payload: design,
-      };
-    }
+  // Exclude _id and designId
+  const { _id, designId, ...rest } = design;
+
+  return {
+    source: 'DB',
+    payload: rest, // Only the technical fields
+  };
+}
 
     // 2️⃣ Structured JSON input (pass-through)
     if (dto.structuredInput) {

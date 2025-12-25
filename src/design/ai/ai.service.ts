@@ -26,23 +26,39 @@ export class AiService {
   }
 
   async validateDesign(input: DesignInput): Promise<AiValidationResult> {
-    const prompt = `
+const prompt = `
 You are an expert in cable standards, specifically IEC 60502-1.
-Input: ${JSON.stringify(input)}
 
-Rules:
-1. Validate each field against IEC 60502-1.
-2. Return ONLY JSON with keys: fields, validation, confidence.
-3. validation must be an array of objects:
-   [
-     { "field": "<field_name>", "status": "PASS|FAIL|WARN", "expected": "<expected_value>", "comment": "<reason>" }
-   ]
-4. Fields that do not match IEC rules must be "FAIL" with reason.
-5. Fields that match exactly → "PASS".
-6. Provide confidence between 0 and 100.
-7. Do NOT hallucinate missing standards.
+Input (DO NOT MODIFY THIS OBJECT):
+${JSON.stringify(input, null, 2)}
 
-Do not include explanations outside JSON.
+STRICT RULES:
+1. You MUST return the input exactly as provided under the key "fields".
+2. Do NOT add, remove, rename, or transform any field inside "fields".
+3. Perform validation ONLY in the "validation" array.
+4. Return ONLY valid JSON (no markdown, no explanations).
+5. Response structure MUST be:
+
+{
+  "fields": { ...exact input... },
+  "validation": [
+    {
+      "field": "<field_name>",
+      "status": "PASS | FAIL | WARN",
+      "expected": "<expected_value>",
+      "comment": "<reason>"
+    }
+  ],
+  "confidence": {
+    "overall": number (0–100)
+  }
+}
+
+6. If a field is not covered by IEC 60502-1, mark it as:
+   status: "WARN"
+   comment: "Not defined in IEC 60502-1"
+
+7. Never hallucinate standards or values.
 `;
 
 
