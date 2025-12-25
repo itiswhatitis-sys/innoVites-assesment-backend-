@@ -26,56 +26,23 @@ export class AiService {
   }
 
   async validateDesign(input: DesignInput): Promise<AiValidationResult> {
-const prompt = `
-You are an expert in IEC 60502-1 cable specifications.
+    const prompt = `
+You are an expert in cable standards, specifically IEC 60502-1.
+Input: ${JSON.stringify(input)}
 
-INPUT:
-"${input}"
+Rules:
+1. Validate each field against IEC 60502-1.
+2. Return ONLY JSON with keys: fields, validation, confidence.
+3. validation must be an array of objects:
+   [
+     { "field": "<field_name>", "status": "PASS|FAIL|WARN", "expected": "<expected_value>", "comment": "<reason>" }
+   ]
+4. Fields that do not match IEC rules must be "FAIL" with reason.
+5. Fields that match exactly → "PASS".
+6. Provide confidence between 0 and 100.
+7. Do NOT hallucinate missing standards.
 
-TASK:
-1. FIRST extract technical attributes from the input string.
-2. Use engineering inference where applicable.
-3. DO NOT leave fields null if a reasonable interpretation exists.
-4. Then validate the extracted values against IEC 60502-1.
-
-FIELD EXTRACTION RULES:
-- "3c" → number_of_cores = 3
-- "25sqmm" → conductor_size_mm2 = 25
-- "600v / 600kv / 0.6/1kV" → voltage_rating = "0.6/1 kV"
-- "xlpe" → insulation_type = "XLPE"
-- "circular" or "round" → conductor_shape = "circular"
-- "compacted" → conductor_construction = "compacted"
-- "0.729ohm" → resistance_ohm = 0.729
-- Color words (red, blue, etc.) → color
-- Standard names like IEC 6028-1 → standard
-
-OUTPUT FORMAT (JSON ONLY):
-{
-  "fields": {
-    "standard": string,
-    "number_of_cores": number,
-    "conductor_size_mm2": number,
-    "voltage_rating": string,
-    "insulation_type": string,
-    "conductor_shape": string,
-    "conductor_construction": string,
-    "resistance_ohm": number,
-    "color": string
-  },
-  "validation": [
-    {
-      "field": string,
-      "expected": string,
-      "status": "PASS" | "FAIL" | "WARN",
-      "comment": string
-    }
-  ],
-  "confidence": number
-}
-
-If a value is inferred from shorthand, mark status as "PASS".
-If ambiguous, mark "WARN".
-Never leave fields empty.
+Do not include explanations outside JSON.
 `;
 
 
