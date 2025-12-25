@@ -27,50 +27,57 @@ export class AiService {
 
   async validateDesign(input: DesignInput): Promise<AiValidationResult> {
 const prompt = `
-You are an expert in IEC 60502-1 cable standards.
+You are an expert in IEC 60502-1 cable specifications.
 
 INPUT:
-${JSON.stringify(input)}
+"${input}"
 
 TASK:
-1. First, PARSE the input into individual technical fields such as:
-   - standard
-   - number_of_cores
-   - conductor_size_mm2
-   - voltage_rating
-   - insulation_type
-   - conductor_shape
-   - conductor_construction
-   - resistance_ohm
-   - color
+1. FIRST extract technical attributes from the input string.
+2. Use engineering inference where applicable.
+3. DO NOT leave fields null if a reasonable interpretation exists.
+4. Then validate the extracted values against IEC 60502-1.
 
-2. Even if the input is a single sentence, you MUST extract multiple fields.
-
-3. Then VALIDATE each extracted field strictly against IEC 60502-1.
+FIELD EXTRACTION RULES:
+- "3c" → number_of_cores = 3
+- "25sqmm" → conductor_size_mm2 = 25
+- "600v / 600kv / 0.6/1kV" → voltage_rating = "0.6/1 kV"
+- "xlpe" → insulation_type = "XLPE"
+- "circular" or "round" → conductor_shape = "circular"
+- "compacted" → conductor_construction = "compacted"
+- "0.729ohm" → resistance_ohm = 0.729
+- Color words (red, blue, etc.) → color
+- Standard names like IEC 6028-1 → standard
 
 OUTPUT FORMAT (JSON ONLY):
 {
   "fields": {
-    "<field_name>": "<value>"
+    "standard": string,
+    "number_of_cores": number,
+    "conductor_size_mm2": number,
+    "voltage_rating": string,
+    "insulation_type": string,
+    "conductor_shape": string,
+    "conductor_construction": string,
+    "resistance_ohm": number,
+    "color": string
   },
   "validation": [
     {
-      "field": "<field_name>",
-      "expected": "<expected_value_or_range>",
-      "status": "PASS | FAIL | WARN",
-      "comment": "<short technical reason>"
+      "field": string,
+      "expected": string,
+      "status": "PASS" | "FAIL" | "WARN",
+      "comment": string
     }
   ],
-  "confidence": <number 0-100>
+  "confidence": number
 }
 
-STRICT RULES:
-- Never return text outside JSON.
-- Never merge multiple attributes into one field.
-- If a value cannot be verified, mark it as "WARN" (not PASS).
-- If a value violates IEC 60502-1, mark it as "FAIL".
-- Always return ALL detected fields in validation.
+If a value is inferred from shorthand, mark status as "PASS".
+If ambiguous, mark "WARN".
+Never leave fields empty.
 `;
+
 
     try {
       const response = await this.client.getChatCompletions('gpt-4o', [
