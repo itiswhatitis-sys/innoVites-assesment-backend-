@@ -33,34 +33,45 @@ INPUT:
 "${input}"
 
 TASK:
-1. FIRST extract technical attributes from the input string.
-2. Use engineering inference where applicable.
-3. DO NOT leave fields null if a reasonable interpretation exists.
-4. Then validate the extracted values against IEC 60502-1.
+1. Extract technical attributes ONLY if they are explicitly present or can be unambiguously inferred.
+2. DO NOT guess or assume values.
+3. If fewer than TWO valid technical attributes can be confidently extracted, return an EMPTY result.
+4. Do NOT infer defaults.
+5. Validate extracted values strictly against IEC 60502-1.
 
 FIELD EXTRACTION RULES:
 - "3c" → number_of_cores = 3
 - "25sqmm" → conductor_size_mm2 = 25
-- "600v / 600kv / 0.6/1kV" → voltage_rating = "0.6/1 kV"
+- "600v" / "0.6/1kV" → voltage_rating = "0.6/1 kV"
 - "xlpe" → insulation_type = "XLPE"
-- "circular" or "round" → conductor_shape = "circular"
+- "circular" / "round" → conductor_shape = "circular"
 - "compacted" → conductor_construction = "compacted"
 - "0.729ohm" → resistance_ohm = 0.729
-- Color words (red, blue, etc.) → color
-- Standard names like IEC 6028-1 → standard
+- Color names → color
+- Standard names like "IEC 60502-1" → standard
 
 OUTPUT FORMAT (JSON ONLY):
+
+If LESS THAN TWO valid attributes are found:
+{
+  "fields": {},
+  "validation": [],
+  "overallStatus": "FAIL",
+  "confidence": 0
+}
+
+Otherwise:
 {
   "fields": {
-    "standard": string,
-    "number_of_cores": number,
-    "conductor_size_mm2": number,
-    "voltage_rating": string,
-    "insulation_type": string,
-    "conductor_shape": string,
-    "conductor_construction": string,
-    "resistance_ohm": number,
-    "color": string
+    "standard": string | null,
+    "number_of_cores": number | null,
+    "conductor_size_mm2": number | null,
+    "voltage_rating": string | null,
+    "insulation_type": string | null,
+    "conductor_shape": string | null,
+    "conductor_construction": string | null,
+    "resistance_ohm": number | null,
+    "color": string | null
   },
   "validation": [
     {
@@ -73,9 +84,11 @@ OUTPUT FORMAT (JSON ONLY):
   "confidence": number
 }
 
-If a value is inferred from shorthand, mark status as "PASS".
-If ambiguous, mark "WARN".
-Never leave fields empty.
+IMPORTANT:
+- Never hallucinate values.
+- Never fill missing fields just to complete the structure.
+- If information is insufficient → return empty result with confidence 0.
+
 `;
 
 
@@ -114,7 +127,7 @@ Never leave fields empty.
       if (Array.isArray(parsed.validation)) {
         validation = parsed.validation.map((v: any) => ({
           field: v.field,
-          status: v.status || 'PASS',
+          status: v.status || 'FAIL',
           expected: v.expected ?? fields[v.field],
           comment: v.comment || '',
         }));
