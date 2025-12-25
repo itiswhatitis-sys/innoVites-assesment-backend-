@@ -26,23 +26,50 @@ export class AiService {
   }
 
   async validateDesign(input: DesignInput): Promise<AiValidationResult> {
-    const prompt = `
-You are an expert in cable standards, specifically IEC 60502-1.
-Input: ${JSON.stringify(input)}
+const prompt = `
+You are an expert in IEC 60502-1 cable standards.
 
-Rules:
-1. Validate each field against IEC 60502-1.
-2. Return ONLY JSON with keys: fields, validation, confidence.
-3. validation must be an array of objects:
-   [
-     { "field": "<field_name>", "status": "PASS|FAIL|WARN", "expected": "<expected_value>", "comment": "<reason>" }
-   ]
-4. Fields that do not match IEC rules must be "FAIL" with reason.
-5. Fields that match exactly → "PASS".
-6. Provide confidence between 0 and 100.
-7. Do NOT hallucinate missing standards.
+INPUT:
+${JSON.stringify(input)}
 
-Do not include explanations outside JSON.
+TASK:
+1. First, PARSE the input into individual technical fields such as:
+   - standard
+   - number_of_cores
+   - conductor_size_mm2
+   - voltage_rating
+   - insulation_type
+   - conductor_shape
+   - conductor_construction
+   - resistance_ohm
+   - color
+
+2. Even if the input is a single sentence, you MUST extract multiple fields.
+
+3. Then VALIDATE each extracted field strictly against IEC 60502-1.
+
+OUTPUT FORMAT (JSON ONLY):
+{
+  "fields": {
+    "<field_name>": "<value>"
+  },
+  "validation": [
+    {
+      "field": "<field_name>",
+      "expected": "<expected_value_or_range>",
+      "status": "PASS | FAIL | WARN",
+      "comment": "<short technical reason>"
+    }
+  ],
+  "confidence": <number 0-100>
+}
+
+STRICT RULES:
+- Never return text outside JSON.
+- Never merge multiple attributes into one field.
+- If a value cannot be verified, mark it as "WARN" (not PASS).
+- If a value violates IEC 60502-1, mark it as "FAIL".
+- Always return ALL detected fields in validation.
 `;
 
     try {
